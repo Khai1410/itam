@@ -6,20 +6,20 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem('vam_user');
+    const raw = localStorage.getItem('itam_user');
     return raw ? JSON.parse(raw) : null;
   });
 
   const login = async (username, password) => {
     const { data } = await client.post('/auth/login', { username, password });
-    localStorage.setItem('vam_token', data.token);
-    localStorage.setItem('vam_user', JSON.stringify(data.user));
+    localStorage.setItem('itam_token', data.token);
+    localStorage.setItem('itam_user', JSON.stringify(data.user));
     setUser(data.user);
   };
 
   const logout = () => {
-    localStorage.removeItem('vam_token');
-    localStorage.removeItem('vam_user');
+    localStorage.removeItem('itam_token');
+    localStorage.removeItem('itam_user');
     setUser(null);
   };
 

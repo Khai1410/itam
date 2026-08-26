@@ -26,4 +26,4 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`VAM backend listening on port ${port}`));
+app.listen(port, () => console.log(`ITAM backend listening on port ${port}`));

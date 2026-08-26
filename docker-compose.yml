@@ -1,3 +1,5 @@
+name: itam
+
 services:
   db:
     image: postgres:16-alpine
@@ -22,13 +24,23 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      EMPLOYEE_EMAIL_DOMAIN: ${EMPLOYEE_EMAIL_DOMAIN:-}
       PORT: 4000
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_ORG_NAME: ${ORG_NAME:-}
+        VITE_SENDER_NAME: ${SENDER_NAME:-}
+        VITE_SENDER_TITLE: ${SENDER_TITLE:-}
+        VITE_SENDER_ADDRESS: ${SENDER_ADDRESS:-}
+        VITE_SENDER_MOBILE: ${SENDER_MOBILE:-}
+        VITE_SENDER_EMAIL: ${SENDER_EMAIL:-}
+        VITE_SENDER_WEB: ${SENDER_WEB:-}
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-8080}:80"

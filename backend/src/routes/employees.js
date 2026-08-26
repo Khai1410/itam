@@ -15,8 +15,9 @@ function pickWritable(body) {
   for (const key of WRITABLE_FIELDS) {
     if (key in body) out[key] = body[key] === '' ? null : body[key];
   }
-  if (out.account && !out.account.includes('@')) {
-    out.account = `${out.account}@vsol.vn`;
+  const domain = process.env.EMPLOYEE_EMAIL_DOMAIN;
+  if (out.account && domain && !out.account.includes('@')) {
+    out.account = `${out.account}@${domain}`;
   }
   return out;
 }

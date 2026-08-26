@@ -14,6 +14,8 @@ import { useAuth } from '../auth.jsx';
 
 const { Sider, Content } = AntLayout;
 
+const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'Your Company';
+
 const NAV_ITEMS = [
   { key: '/dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
   { key: '/assets', label: 'Assets', icon: <LaptopOutlined /> },
@@ -50,21 +52,21 @@ export default function Layout() {
     : NAV_ITEMS;
 
   return (
-    <AntLayout className="vam-layout">
-      <Sider width={232} className={`vam-sider${mobileOpen ? ' mobile-open' : ''}`}>
-        <div className="vam-brand">
-          <div className="mark">VS</div>
+    <AntLayout className="itam-layout">
+      <Sider width={232} className={`itam-sider${mobileOpen ? ' mobile-open' : ''}`}>
+        <div className="itam-brand">
+          <div className="mark">{initials(ORG_NAME)}</div>
           <div>
-            <div className="title">VSOL Assets</div>
-            <div className="subtitle">IT Asset Management</div>
+            <div className="title">IT Asset Management</div>
+            <div className="subtitle">{ORG_NAME}</div>
           </div>
         </div>
 
-        <nav className="vam-nav">
+        <nav className="itam-nav">
           {navItems.map((item) => (
             <div
               key={item.key}
-              className={`vam-nav-item${location.pathname === item.key ? ' active' : ''}`}
+              className={`itam-nav-item${location.pathname === item.key ? ' active' : ''}`}
               onClick={() => navigate(item.key)}
             >
               {item.icon}
@@ -73,8 +75,8 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="vam-sider-footer">
-          <div className="vam-avatar">{initials(user?.username)}</div>
+        <div className="itam-sider-footer">
+          <div className="itam-avatar">{initials(user?.username)}</div>
           <div className="who">
             <div className="name">{user?.username}</div>
             <div className="role">{user?.role}</div>
@@ -87,14 +89,14 @@ export default function Layout() {
         </div>
       </Sider>
 
-      {mobileOpen && <div className="vam-sider-backdrop" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <div className="itam-sider-backdrop" onClick={() => setMobileOpen(false)} />}
 
       <AntLayout>
-        <div className="vam-topbar">
-          <MenuOutlined className="vam-menu-trigger" onClick={() => setMobileOpen((v) => !v)} />
+        <div className="itam-topbar">
+          <MenuOutlined className="itam-menu-trigger" onClick={() => setMobileOpen((v) => !v)} />
           <div className="page-heading">{PAGE_TITLES[location.pathname] || ''}</div>
         </div>
-        <Content className="vam-content">
+        <Content className="itam-content">
           <Outlet />
         </Content>
       </AntLayout>

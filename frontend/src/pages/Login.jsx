@@ -4,6 +4,13 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 
+const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'Your Company';
+
+function initials(name) {
+  if (!name) return '?';
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -24,12 +31,12 @@ export default function Login() {
   };
 
   return (
-    <div className="vam-login-screen">
-      <div className="vam-login-card">
-        <div className="vam-login-brand">
-          <div className="mark">VS</div>
-          <div className="title">VSOL Asset Management</div>
-          <div className="subtitle">Sign in to manage IT assets</div>
+    <div className="itam-login-screen">
+      <div className="itam-login-card">
+        <div className="itam-login-brand">
+          <div className="mark">{initials(ORG_NAME)}</div>
+          <div className="title">IT Asset Management</div>
+          <div className="subtitle">Sign in to manage {ORG_NAME}'s IT assets</div>
         </div>
 
         {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 18 }} />}

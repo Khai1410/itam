@@ -1,46 +1,91 @@
-# VSOL Asset Management
+# IT Asset Management
 
-Web app quản lý tài sản IT của VSOL, thay thế cho file Excel `Vsol Asset Management1 (1).xlsx`. Chạy hoàn toàn bằng Docker.
+A self-hosted web app for tracking IT assets (laptops, monitors, phones, etc.) and who
+they're assigned to — built to replace a spreadsheet-based asset tracker. Runs entirely
+in Docker; no external services required.
 
-## Kiến trúc
+## Architecture
 
-- **backend/** — Node.js (Express) + PostgreSQL (Knex), REST API dưới `/api`
-- **frontend/** — React (Vite) + Ant Design, build tĩnh phục vụ qua Nginx, Nginx proxy `/api` sang backend
-- **db** — PostgreSQL 16, dữ liệu lưu trong Docker volume `vam_db_data`
+- **backend/** — Node.js (Express) + PostgreSQL (Knex), REST API under `/api`
+- **frontend/** — React (Vite) + Ant Design, static build served by Nginx, which proxies
+  `/api` to the backend
+- **db** — PostgreSQL 16, data stored in the `db_data` Docker volume
 
-Khi container backend khởi động lần đầu, nó tự động:
-1. Chạy migration tạo bảng (`users`, `employees`, `assets`, `file_vault`, `windows_keys`)
-2. Tạo tài khoản admin từ biến môi trường `ADMIN_USERNAME` / `ADMIN_PASSWORD`
-3. Import toàn bộ dữ liệu từ file Excel gốc (đã copy sẵn vào `backend/seed/data/assets-source.xlsx`) — chỉ chạy một lần, các lần sau bỏ qua nếu đã có dữ liệu
+On first startup, the backend container automatically:
+1. Runs migrations to create the schema (`users`, `employees`, `assets`,
+   `asset_assignment_history`, `file_vault`, `windows_keys`)
+2. Creates an admin account from the `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars
+3. Imports data from an Excel workbook if you provide one at
+   `backend/seed/data/assets-source.xlsx` (see [Importing existing data](#importing-existing-data)) —
+   runs once, skipped on later restarts if `assets` already has rows
 
-## Chạy ứng dụng
+## Running it
 
 ```bash
 cp .env.example .env
-# sửa JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD, mật khẩu Postgres trong .env
+# edit .env: set JWT_SECRET, ADMIN_USERNAME/ADMIN_PASSWORD, and a Postgres password
 
 docker compose up --build -d
 ```
 
-Truy cập: **http://localhost:8080** (đổi cổng qua `FRONTEND_PORT` trong `.env`)
+Open **http://localhost:8080** (change the port via `FRONTEND_PORT` in `.env`) and sign
+in with the admin credentials from `.env`.
 
-Đăng nhập bằng tài khoản admin đã cấu hình trong `.env`.
+## Configuration
 
-## Tính năng
+All configuration is via `.env` at the repo root — see `.env.example` for the full list.
+Everything is optional except the DB/JWT/admin values; the app works out of the box with
+generic placeholders if you skip the rest.
 
-- **Dashboard**: tổng số thiết bị, phân bố theo trạng thái (In Use/In Stock/Damaged/Lost/Sold/Warranty), theo loại thiết bị, địa điểm, business unit, chip & dung lượng laptop — tính trực tiếp từ dữ liệu hiện tại (chính xác hơn sheet Dashboard tĩnh trong Excel gốc).
-- **Tài sản**: bảng danh sách có lọc theo loại/trạng thái/địa điểm/business unit, tìm kiếm, thêm/sửa/xoá (chỉ admin), xuất Excel/CSV theo bộ lọc hiện tại.
-- **Tra cứu theo nhân viên**: chọn nhân viên → xem toàn bộ tài sản đang giữ.
-- **Nhân viên**: danh sách nhân viên từ sheet Employee.
-- **Tài khoản** (chỉ admin): tạo/xoá tài khoản `admin` hoặc `viewer`. Viewer chỉ có quyền xem, không thêm/sửa/xoá được tài sản.
+| Variable | Purpose |
+|---|---|
+| `POSTGRES_*`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Core setup — required |
+| `EMPLOYEE_EMAIL_DOMAIN` | If set, auto-appends this domain to any employee account typed without an `@` (e.g. `jdoe` → `jdoe@example.com`) |
+| `ORG_NAME` | Shown in the sidebar and login screen | 
+| `SENDER_NAME`, `SENDER_TITLE`, `SENDER_ADDRESS`, `SENDER_MOBILE`, `SENDER_EMAIL`, `SENDER_WEB` | IT contact details used in the handover-confirmation email template on the Employee Lookup page |
 
-## Ghi chú dữ liệu
+**Logo**: replace `frontend/src/assets/orgLogo.js` (a single base64 `data:` URI export)
+with your own to rebrand the handover-email signature block.
 
-- Sheet `Detail` gốc có 530 dòng tài sản hợp lệ (536 dòng trừ 6 dòng trống) — nhiều hơn số 364 trên tab Dashboard tĩnh của Excel vì tab đó chỉ tổng hợp phạm vi HCM & HN tại thời điểm chốt số liệu, trong khi bảng Detail đầy đủ còn có địa điểm `IPL` và trạng thái `Warranty`.
-- Các giá trị lỗi `#N/A` / `0` từ công thức Excel được chuẩn hoá thành `NULL` khi import.
-- Muốn import lại từ đầu: `docker compose down -v` rồi `docker compose up --build -d` (sẽ xoá toàn bộ dữ liệu hiện có trong DB và nhập lại từ file Excel gốc).
+## Features
 
-## Phát triển local (không qua Docker)
+- **Dashboard** — asset counts by status, type, location, business unit, and (for
+  laptops) chip/storage, computed live from current data
+- **Assets** — filterable, searchable, resizable-column table; add/edit/delete
+  (admin only); right-click a row for Edit/Delete, double-click to edit; per-asset
+  assignment history with timestamps; Excel/CSV export respecting active filters
+- **Employee Lookup** — pick an employee to see everything assigned to them, plus a
+  ready-to-copy handover-confirmation email (HTML, pastes into Outlook/Gmail with
+  formatting intact)
+- **Employees** — list/add/edit/delete, bulk-select and delete (e.g. departed staff),
+  onboarding form
+- **Accounts** (admin only) — create/delete `admin` or `viewer` users; viewers get
+  read-only access everywhere
+
+## Importing existing data
+
+If you're migrating from a spreadsheet, drop an `.xlsx` file at
+`backend/seed/data/assets-source.xlsx` before first startup, matching the column layout
+`backend/src/seed/import-excel.js` expects (see that file for the exact column mapping —
+it reads a `Detail` sheet for assets and an `Employee` sheet for staff). Re-running the
+import: `docker compose down -v && docker compose up --build -d` (this wipes the
+database and reimports from scratch).
+
+Without a seed file, the app just starts with empty `assets`/`employees` tables — add
+data through the UI.
+
+## Backups
+
+`scripts/backup-db.ps1` (Windows/PowerShell) dumps the database via `pg_dump` to
+`backups/` with a timestamp, keeping the most recent 30. Schedule it with Windows Task
+Scheduler for automatic daily backups. Restore with:
+
+```bash
+docker cp your_backup.dump itam-db-1:/tmp/restore.dump
+docker exec itam-db-1 pg_restore -U <POSTGRES_USER> -d <POSTGRES_DB> --clean --if-exists /tmp/restore.dump
+```
+
+## Local development (without Docker)
 
 ```bash
 # Backend
@@ -48,11 +93,11 @@ cd backend
 npm install
 npm run migrate
 npm run seed:admin
-npm run seed:import
-npm start          # http://localhost:4000
+npm run seed:import   # only if you've placed a seed .xlsx
+npm start              # http://localhost:4000
 
 # Frontend
 cd frontend
 npm install
-npm run dev         # http://localhost:5173, proxy /api sang localhost:4000
+npm run dev             # http://localhost:5173, proxies /api to localhost:4000
 ```

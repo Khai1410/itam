@@ -62,11 +62,11 @@ body {
 
 /* ---------- App shell ---------- */
 
-.vam-layout {
+.itam-layout {
   min-height: 100vh;
 }
 
-.vam-sider {
+.itam-sider {
   background: var(--sidebar-bg) !important;
   position: sticky;
   top: 0;
@@ -75,13 +75,13 @@ body {
   z-index: 50;
 }
 
-.vam-sider .ant-layout-sider-children {
+.itam-sider .ant-layout-sider-children {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.vam-brand {
+.itam-brand {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -89,7 +89,7 @@ body {
   color: #fff;
 }
 
-.vam-brand .mark {
+.itam-brand .mark {
   width: 32px;
   height: 32px;
   border-radius: 9px;
@@ -103,19 +103,19 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.vam-brand .title {
+.itam-brand .title {
   font-weight: 600;
   font-size: 14.5px;
   line-height: 1.25;
 }
 
-.vam-brand .subtitle {
+.itam-brand .subtitle {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.3px;
 }
 
-.vam-nav {
+.itam-nav {
   flex: 1;
   padding: 4px 12px;
   display: flex;
@@ -123,7 +123,7 @@ body {
   gap: 2px;
 }
 
-.vam-nav-item {
+.itam-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -136,23 +136,23 @@ body {
   user-select: none;
 }
 
-.vam-nav-item:hover {
+.itam-nav-item:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--sidebar-text-active);
 }
 
-.vam-nav-item.active {
+.itam-nav-item.active {
   background: var(--sidebar-bg-active);
   color: var(--sidebar-text-active);
   font-weight: 500;
 }
 
-.vam-nav-item .anticon {
+.itam-nav-item .anticon {
   font-size: 15px;
   width: 16px;
 }
 
-.vam-sider-footer {
+.itam-sider-footer {
   padding: 14px 16px;
   border-top: 1px solid var(--sidebar-border);
   display: flex;
@@ -160,7 +160,7 @@ body {
   gap: 10px;
 }
 
-.vam-avatar {
+.itam-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -174,12 +174,12 @@ body {
   flex-shrink: 0;
 }
 
-.vam-sider-footer .who {
+.itam-sider-footer .who {
   flex: 1;
   min-width: 0;
 }
 
-.vam-sider-footer .name {
+.itam-sider-footer .name {
   color: #fff;
   font-size: 13px;
   font-weight: 500;
@@ -188,13 +188,13 @@ body {
   white-space: nowrap;
 }
 
-.vam-sider-footer .role {
+.itam-sider-footer .role {
   color: rgba(255, 255, 255, 0.45);
   font-size: 11px;
   text-transform: capitalize;
 }
 
-.vam-topbar {
+.itam-topbar {
   position: sticky;
   top: 0;
   z-index: 40;
@@ -207,12 +207,12 @@ body {
   padding: 0 28px;
 }
 
-.vam-topbar .page-heading {
+.itam-topbar .page-heading {
   font-size: 17px;
   font-weight: 600;
 }
 
-.vam-menu-trigger {
+.itam-menu-trigger {
   display: none;
   font-size: 18px;
   color: var(--text-secondary);
@@ -220,12 +220,12 @@ body {
   padding: 4px;
 }
 
-.vam-content {
+.itam-content {
   padding: 24px 28px 40px;
   width: 100%;
 }
 
-.vam-sider-backdrop {
+.itam-sider-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(11, 12, 16, 0.5);
@@ -235,12 +235,12 @@ body {
 /* ---------- Responsive: tablet & below ---------- */
 
 @media (max-width: 900px) {
-  .vam-menu-trigger {
+  .itam-menu-trigger {
     display: flex;
     align-items: center;
   }
 
-  .vam-sider {
+  .itam-sider {
     position: fixed !important;
     top: 0;
     left: 0;
@@ -250,16 +250,16 @@ body {
     transition: transform 0.22s ease;
   }
 
-  .vam-sider.mobile-open {
+  .itam-sider.mobile-open {
     transform: translateX(0);
     box-shadow: 0 0 48px rgba(0, 0, 0, 0.45);
   }
 
-  .vam-topbar {
+  .itam-topbar {
     padding: 0 16px;
   }
 
-  .vam-content {
+  .itam-content {
     padding: 16px 16px 32px;
   }
 
@@ -292,7 +292,7 @@ body {
     width: 100% !important;
   }
 
-  .vam-login-card {
+  .itam-login-card {
     padding: 28px 22px 24px;
   }
 
@@ -526,7 +526,7 @@ body {
 
 /* ---------- Login page ---------- */
 
-.vam-login-screen {
+.itam-login-screen {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -538,7 +538,7 @@ body {
   padding: 20px;
 }
 
-.vam-login-card {
+.itam-login-card {
   width: 380px;
   max-width: 100%;
   background: var(--surface-1);
@@ -547,7 +547,7 @@ body {
   padding: 36px 32px 30px;
 }
 
-.vam-login-brand {
+.itam-login-brand {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -555,7 +555,7 @@ body {
   margin-bottom: 26px;
 }
 
-.vam-login-brand .mark {
+.itam-login-brand .mark {
   width: 48px;
   height: 48px;
   border-radius: 14px;
@@ -570,13 +570,13 @@ body {
   box-shadow: 0 8px 20px rgba(42, 120, 214, 0.35);
 }
 
-.vam-login-brand .title {
+.itam-login-brand .title {
   font-size: 16.5px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.vam-login-brand .subtitle {
+.itam-login-brand .subtitle {
   font-size: 12.5px;
   color: var(--text-muted);
   margin-top: 3px;

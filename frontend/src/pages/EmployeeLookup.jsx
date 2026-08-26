@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Select, Table, Spin, Descriptions, Tag, Button, message } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import client from '../api/client';
-import { VSOL_LOGO_DATA_URI } from '../assets/vsolLogo.js';
+import { ORG_LOGO_DATA_URI } from '../assets/orgLogo.js';
 import ResizableTitle from '../components/ResizableTitle.jsx';
 
 const INITIAL_ASSET_COLUMNS = [
@@ -27,16 +27,19 @@ const STATUS_COLORS = {
   Warranty: '#4a3aa7',
 };
 
+// Org-specific sender details for the handover email — set via VITE_SENDER_* in .env
+// (see .env.example). Falls back to placeholder values for a fresh, unconfigured clone.
 const SENDER = {
-  name: 'Nguyễn Viết Khải',
-  title: 'Lead IT Support Engineer',
-  address: '236/6 Dien Bien Phu St., Gia Dinh Ward, Ho Chi Minh City',
-  mobile: '(+84) 916 090 617',
-  email: 'khainv@vsol.vn',
-  web: 'vsol.vn',
+  name: import.meta.env.VITE_SENDER_NAME || 'IT Support',
+  title: import.meta.env.VITE_SENDER_TITLE || 'IT Support Engineer',
+  address: import.meta.env.VITE_SENDER_ADDRESS || '',
+  mobile: import.meta.env.VITE_SENDER_MOBILE || '',
+  email: import.meta.env.VITE_SENDER_EMAIL || 'it-support@example.com',
+  web: import.meta.env.VITE_SENDER_WEB || '',
 };
 
-const EMAIL_SUBJECT = 'VSOL Asset Assignment Confirmation';
+const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'Your Company';
+const EMAIL_SUBJECT = `[${ORG_NAME} IT] Asset Assignment Confirmation`;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => (
@@ -89,15 +92,19 @@ function buildEmailHtml(employee, assets) {
   <p style="margin:0 0 10px;color:#2E75B6;font-weight:bold;">Thanks and Best Regards,</p>
   <table style="border-collapse:collapse;">
     <tr>
-      <td style="vertical-align:middle;padding-right:16px;">
-        <img src="${VSOL_LOGO_DATA_URI}" alt="VSOL" width="100" style="display:block;" />
-      </td>
-      <td style="padding-left:16px;vertical-align:middle;line-height:1.6;">
+      ${
+        ORG_LOGO_DATA_URI
+          ? `<td style="vertical-align:middle;padding-right:16px;">
+        <img src="${ORG_LOGO_DATA_URI}" alt="${escapeHtml(ORG_NAME)}" width="100" style="display:block;" />
+      </td>`
+          : ''
+      }
+      <td style="${ORG_LOGO_DATA_URI ? 'padding-left:16px;' : ''}vertical-align:middle;line-height:1.6;">
         <b style="color:#2E75B6;">${escapeHtml(SENDER.name)} | ${escapeHtml(SENDER.title)}</b><br/>
-        <b>A:</b> ${escapeHtml(SENDER.address)}<br/>
-        <b>M:</b> ${escapeHtml(SENDER.mobile)}<br/>
-        <b>E:</b> <a href="mailto:${SENDER.email}" style="color:#2E75B6;">${SENDER.email}</a><br/>
-        <b>W:</b> <a href="https://${SENDER.web}" style="color:#2E75B6;">${SENDER.web}</a>
+        ${SENDER.address ? `<b>A:</b> ${escapeHtml(SENDER.address)}<br/>` : ''}
+        ${SENDER.mobile ? `<b>M:</b> ${escapeHtml(SENDER.mobile)}<br/>` : ''}
+        <b>E:</b> <a href="mailto:${SENDER.email}" style="color:#2E75B6;">${SENDER.email}</a>${SENDER.web ? '<br/>' : ''}
+        ${SENDER.web ? `<b>W:</b> <a href="https://${SENDER.web}" style="color:#2E75B6;">${SENDER.web}</a>` : ''}
       </td>
     </tr>
   </table>
@@ -126,11 +133,15 @@ Please review the information above and let us know if any corrections are requi
 
 Thanks and Best Regards,
 
-${SENDER.name} | ${SENDER.title}
-A: ${SENDER.address}
-M: ${SENDER.mobile}
-E: ${SENDER.email}
-W: ${SENDER.web}`;
+${[
+    `${SENDER.name} | ${SENDER.title}`,
+    SENDER.address && `A: ${SENDER.address}`,
+    SENDER.mobile && `M: ${SENDER.mobile}`,
+    `E: ${SENDER.email}`,
+    SENDER.web && `W: ${SENDER.web}`,
+  ]
+    .filter(Boolean)
+    .join('\n')}`;
 }
 
 export default function EmployeeLookup() {

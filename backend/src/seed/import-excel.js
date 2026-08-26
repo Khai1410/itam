@@ -64,8 +64,9 @@ function toNumber(value) {
 }
 
 function normalizeAccount(account) {
-  if (!account) return account;
-  return account.includes('@') ? account : `${account}@vsol.vn`;
+  const domain = process.env.EMPLOYEE_EMAIL_DOMAIN;
+  if (!account || !domain) return account;
+  return account.includes('@') ? account : `${account}@${domain}`;
 }
 
 async function importEmployees(workbook) {
