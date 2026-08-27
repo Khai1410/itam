@@ -1,8 +1,12 @@
 const express = require('express');
+const multer = require('multer');
+const ExcelJS = require('exceljs');
 const db = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { COLUMNS } = require('../lib/assetColumns');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const WRITABLE_FIELDS = [
   'no', 'device_name', 'condition', 'business_unit', 'job_family', 'project', 'location',
@@ -112,6 +116,151 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     await logAssignmentChange(asset.id, null, asset.employee_name, asset.employee_id, req.user.username);
   }
   res.status(201).json(asset);
+});
+
+const BOOLEAN_FIELDS = new Set(['intune', 'license_win11']);
+const DATE_FIELDS = new Set(['purchase_date']);
+const NUMBER_FIELDS = new Set(['no', 'price']);
+
+function unwrapCellValue(v) {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) return v;
+  if (typeof v === 'object') {
+    if (v.error) return null;
+    if (Array.isArray(v.richText)) return v.richText.map((rt) => rt.text).join('');
+    if ('result' in v) return unwrapCellValue(v.result);
+    if ('text' in v) return v.text;
+    return null;
+  }
+  return v;
+}
+
+function toImportBool(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'boolean') return v;
+  const s = String(v).trim().toLowerCase();
+  if (['true', 'yes', 'y', '1'].includes(s)) return true;
+  if (['false', 'no', 'n', '0'].includes(s)) return false;
+  return null;
+}
+
+function toImportDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  const s = String(v).trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); // ISO, e.g. from a re-imported export
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // dd/mm/yyyy
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  const parsed = new Date(s);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function toImportNumber(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
+router.post('/import', requireAuth, requireAdmin, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.load(req.file.buffer);
+  } catch {
+    return res.status(400).json({ error: 'Could not read the uploaded file as an Excel workbook (.xlsx)' });
+  }
+
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return res.status(400).json({ error: 'The workbook has no sheets' });
+
+  const headerLookup = {};
+  COLUMNS.forEach(([key, label]) => {
+    headerLookup[label.toLowerCase().trim()] = key;
+  });
+
+  const colFieldMap = {};
+  sheet.getRow(1).eachCell((cell, colNumber) => {
+    const text = String(unwrapCellValue(cell.value) ?? '').toLowerCase().trim();
+    if (headerLookup[text]) colFieldMap[colNumber] = headerLookup[text];
+  });
+
+  if (!Object.keys(colFieldMap).length) {
+    return res.status(400).json({
+      error: 'No recognized column headers found in row 1. Expected headers like "Label", "Device Name", '
+        + '"Condition", "Serial Number"... (same as the Export Excel file).',
+    });
+  }
+
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber);
+    if (row.cellCount === 0) continue;
+
+    const record = {};
+    let hasData = false;
+    for (const [colNumber, field] of Object.entries(colFieldMap)) {
+      let value = unwrapCellValue(row.getCell(Number(colNumber)).value);
+      if (value === '') value = null;
+      if (value !== null) hasData = true;
+
+      if (BOOLEAN_FIELDS.has(field)) value = toImportBool(value);
+      else if (DATE_FIELDS.has(field)) value = toImportDate(value);
+      else if (NUMBER_FIELDS.has(field)) value = toImportNumber(value);
+      else if (value !== null) value = String(value).trim() || null;
+
+      record[field] = value;
+    }
+
+    if (!hasData) continue; // fully blank row
+    if (!record.device_name) {
+      errors.push(`Row ${rowNumber}: missing "Device Name", skipped`);
+      skipped++;
+      continue;
+    }
+
+    try {
+      let existing = null;
+      if (record.label) existing = await db('assets').where({ label: record.label }).first();
+      if (!existing && record.serial_number) {
+        existing = await db('assets').where({ serial_number: record.serial_number }).first();
+      }
+
+      if (existing) {
+        const [asset] = await db('assets')
+          .where({ id: existing.id })
+          .update({ ...record, updated_at: db.fn.now() })
+          .returning('*');
+        if ('employee_name' in record) {
+          await logAssignmentChange(
+            asset.id,
+            existing.employee_name,
+            asset.employee_name,
+            asset.employee_id,
+            req.user.username
+          );
+        }
+        updated++;
+      } else {
+        const [asset] = await db('assets').insert(record).returning('*');
+        if (asset.employee_name) {
+          await logAssignmentChange(asset.id, null, asset.employee_name, asset.employee_id, req.user.username);
+        }
+        created++;
+      }
+    } catch (err) {
+      errors.push(`Row ${rowNumber}: ${err.message}`);
+      skipped++;
+    }
+  }
+
+  res.json({ created, updated, skipped, errors: errors.slice(0, 50) });
 });
 
 router.put('/:id', requireAuth, requireAdmin, async (req, res) => {

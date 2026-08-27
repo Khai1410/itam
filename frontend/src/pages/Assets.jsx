@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Input, Select, Button, Modal, Form, Space, message, InputNumber, DatePicker, Checkbox, Dropdown, Tag } from 'antd';
-import { PlusOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
+import { Table, Input, Select, Button, Modal, Form, Space, message, InputNumber, DatePicker, Checkbox, Dropdown, Tag, Upload } from 'antd';
+import { PlusOutlined, DownloadOutlined, UploadOutlined, EditOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
 import { useAuth } from '../auth.jsx';
@@ -232,6 +232,36 @@ export default function Assets() {
     fetchData();
   };
 
+  const handleImport = async ({ file, onSuccess, onError }) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await client.post('/assets/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      onSuccess?.(res.data);
+      const { created, updated, skipped, errors } = res.data;
+      message.success(`Import done — ${created} added, ${updated} updated${skipped ? `, ${skipped} skipped` : ''}`);
+      if (errors?.length) {
+        Modal.warning({
+          title: `Import finished with ${errors.length} warning(s)`,
+          width: 560,
+          content: (
+            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+              {errors.map((e, i) => (
+                <div key={i}>{e}</div>
+              ))}
+            </div>
+          ),
+        });
+      }
+      fetchData();
+    } catch (err) {
+      onError?.(err);
+      message.error(err.response?.data?.error || 'Import failed');
+    }
+  };
+
   const handleResize = (index) => (_, { size }) => {
     setColumns((cols) => {
       const next = [...cols];
@@ -262,9 +292,14 @@ export default function Assets() {
             Export CSV
           </Button>
           {isAdmin && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              Add Asset
-            </Button>
+            <>
+              <Upload accept=".xlsx" showUploadList={false} customRequest={handleImport}>
+                <Button icon={<UploadOutlined />}>Import Excel</Button>
+              </Upload>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                Add Asset
+              </Button>
+            </>
           )}
         </Space>
       </div>
