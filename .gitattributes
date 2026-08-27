@@ -1,0 +1,5 @@
+# Force LF line endings for files that run inside Linux containers, regardless of the
+# checking-out OS's line-ending settings (e.g. Windows' core.autocrlf=true) — a shell
+# script checked out with CRLF fails with a cryptic "no such file or directory".
+*.sh text eol=lf
+entrypoint.sh text eol=lf
