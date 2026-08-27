@@ -37,7 +37,7 @@ const INITIAL_COLUMNS = [
   { title: 'No', dataIndex: 'no', width: 70, fixed: 'left' },
   { title: 'Type', dataIndex: 'device_name', width: 110, fixed: 'left' },
   { title: 'Label', dataIndex: 'label', width: 110, fixed: 'left' },
-  { title: 'Old Label', dataIndex: 'old_label', width: 110 },
+  { title: 'Old Label', dataIndex: 'old_label', width: 110, fixed: 'left' },
   {
     title: 'Status',
     dataIndex: 'condition',
