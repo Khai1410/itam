@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 const db = require('../db');
@@ -209,6 +210,11 @@ async function alreadyImported() {
 async function main() {
   if (await alreadyImported()) {
     console.log('Assets table already has data, skipping Excel import.');
+    return;
+  }
+
+  if (!fs.existsSync(SOURCE_FILE)) {
+    console.log(`No seed file at ${SOURCE_FILE} — starting with empty assets/employees tables.`);
     return;
   }
 

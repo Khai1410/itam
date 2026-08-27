@@ -30,24 +30,32 @@ On first startup, the backend container automatically:
 ## Running it
 
 ```bash
+docker compose up --build -d
+```
+
+That's it — no `.env` file required to try it out. Open **http://localhost:8080** and
+sign in with the default admin (`admin` / `admin123`).
+
+For anything beyond a quick look — a shared/production instance, or just changing the
+default password — copy `.env.example` to `.env` and edit it before starting:
+
+```bash
 cp .env.example .env
 # edit .env: set JWT_SECRET, ADMIN_USERNAME/ADMIN_PASSWORD, and a Postgres password
 
 docker compose up --build -d
 ```
 
-Open **http://localhost:8080** (change the port via `FRONTEND_PORT` in `.env`) and sign
-in with the admin credentials from `.env`.
+(Change the exposed port via `FRONTEND_PORT` in `.env`.)
 
 ## Configuration
 
 All configuration is via `.env` at the repo root — see `.env.example` for the full list.
-Everything is optional except the DB/JWT/admin values; the app works out of the box with
-generic placeholders if you skip the rest.
+Every variable has a working default, so `.env` is entirely optional for a first run.
 
 | Variable | Purpose |
 |---|---|
-| `POSTGRES_*`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Core setup — required |
+| `POSTGRES_*`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Core setup — defaults to `itam` / `admin` / `admin123`, change for anything but a local trial |
 | `EMPLOYEE_EMAIL_DOMAIN` | If set, auto-appends this domain to any employee account typed without an `@` (e.g. `jdoe` → `jdoe@example.com`) |
 | `ORG_NAME` | Shown in the sidebar and login screen | 
 | `SENDER_NAME`, `SENDER_TITLE`, `SENDER_ADDRESS`, `SENDER_MOBILE`, `SENDER_EMAIL`, `SENDER_WEB` | IT contact details used in the handover-confirmation email template on the Employee Lookup page |
@@ -61,7 +69,8 @@ with your own to rebrand the handover-email signature block.
   laptops) chip/storage, computed live from current data
 - **Assets** — filterable, searchable, resizable-column table; add/edit/delete
   (admin only); right-click a row for Edit/Delete, double-click to edit; per-asset
-  assignment history with timestamps; Excel/CSV export respecting active filters
+  assignment history with timestamps; Excel/CSV export respecting active filters, and
+  bulk import/update from an `.xlsx` using the same column layout
 - **Employee Lookup** — pick an employee to see everything assigned to them, plus a
   ready-to-copy handover-confirmation email (HTML, pastes into Outlook/Gmail with
   formatting intact)
@@ -79,8 +88,10 @@ it reads a `Detail` sheet for assets and an `Employee` sheet for staff). Re-runn
 import: `docker compose down -v && docker compose up --build -d` (this wipes the
 database and reimports from scratch).
 
-Without a seed file, the app just starts with empty `assets`/`employees` tables — add
-data through the UI.
+Without a seed file, the app just starts with empty `assets`/`employees` tables. That's
+the easiest path for most people — sign in, then use **Assets → Import Excel** to bulk-add
+your devices at any time (see [Features](#features)) instead of wiring up a one-time seed
+file.
 
 ## Backups
 
