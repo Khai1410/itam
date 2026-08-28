@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Table, Input, Select, Button, Modal, Form, Space, message, InputNumber, DatePicker, Checkbox, Dropdown, Tag, Upload } from 'antd';
 import { PlusOutlined, DownloadOutlined, UploadOutlined, EditOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -121,6 +121,7 @@ export default function Assets() {
   const [historyAsset, setHistoryAsset] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const lastAutoLabelRef = useRef(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -155,7 +156,21 @@ export default function Assets() {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
+    lastAutoLabelRef.current = null;
     setModalOpen(true);
+  };
+
+  const handleDeviceTypeChange = async (deviceName) => {
+    if (editing || !deviceName) return;
+    const current = form.getFieldValue('label');
+    if (current && current !== lastAutoLabelRef.current) return; // user already typed a label manually
+    try {
+      const res = await client.get('/assets/next-label', { params: { device_name: deviceName } });
+      lastAutoLabelRef.current = res.data.label;
+      form.setFieldsValue({ label: res.data.label });
+    } catch {
+      // leave the label field for manual entry
+    }
   };
 
   const openEdit = (record) => {
@@ -514,7 +529,11 @@ export default function Assets() {
               <InputNumber style={{ width: 100 }} />
             </Form.Item>
             <Form.Item name="device_name" label="Device Type" rules={[{ required: true }]}>
-              <Select style={{ width: 160 }} options={DEVICE_TYPES.map((v) => ({ value: v, label: v }))} />
+              <Select
+                style={{ width: 160 }}
+                options={DEVICE_TYPES.map((v) => ({ value: v, label: v }))}
+                onChange={handleDeviceTypeChange}
+              />
             </Form.Item>
             <Form.Item name="condition" label="Status" rules={[{ required: true }]}>
               <Select style={{ width: 140 }} options={STATUSES.map((v) => ({ value: v, label: v }))} />
@@ -535,7 +554,11 @@ export default function Assets() {
             <Form.Item name="project" label="Project" tooltip="Auto-filled from the assigned employee.">
               <Input style={{ width: 150 }} disabled />
             </Form.Item>
-            <Form.Item name="label" label="Label">
+            <Form.Item
+              name="label"
+              label="Label"
+              tooltip={editing ? undefined : 'Auto-filled with the next number after choosing a Device Type — you can still edit it.'}
+            >
               <Input style={{ width: 150 }} />
             </Form.Item>
             <Form.Item name="old_label" label="Old Label">

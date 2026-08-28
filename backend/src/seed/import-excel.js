@@ -70,6 +70,10 @@ function normalizeAccount(account) {
   return account.includes('@') ? account : `${account}@${domain}`;
 }
 
+function stripAccountSuffix(value) {
+  return value ? value.replace(/\s*\([^)]*\)\s*$/, '').trim() || null : value;
+}
+
 async function importEmployees(workbook) {
   const sheet = workbook.getWorksheet('Employee');
   const rows = [];
@@ -158,7 +162,7 @@ async function importAssets(workbook) {
       employee_id: cleanText(cellValue(row, 37)),
       employee_job_title: cleanText(cellValue(row, 38)),
       employee_dept: cleanText(cellValue(row, 39)),
-      line_manager: cleanText(cellValue(row, 40)),
+      line_manager: stripAccountSuffix(cleanText(cellValue(row, 40))),
       repair_date: toDate(cellValue(row, 41)),
       repair_details: cleanText(cellValue(row, 42)),
       note: cleanText(cellValue(row, 43)),

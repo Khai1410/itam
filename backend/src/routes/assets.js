@@ -103,6 +103,38 @@ router.get('/', requireAuth, async (req, res) => {
   res.json({ data: rows, total: Number(count), page, pageSize });
 });
 
+const FALLBACK_LABEL_PREFIX = {
+  LAPTOP: 'LAP', MONITOR: 'MON', MOUSE: 'MOU', IPAD: 'IPAD', SMARTPHONE: 'SPH',
+  CABLE: 'CAB', SSD: 'SSD', RAM: 'RAM', CPU: 'CPU', ROUTER: 'RTR', PRINTER: 'PRN', SPEAKER: 'SPK',
+};
+
+router.get('/next-label', requireAuth, async (req, res) => {
+  const deviceName = String(req.query.device_name || '').trim();
+  if (!deviceName) return res.status(400).json({ error: 'device_name is required' });
+
+  const rows = await db('assets')
+    .where({ device_name: deviceName })
+    .whereNotNull('label')
+    .whereRaw("label ~ '^[A-Za-z]+[0-9]+$'")
+    .select('label');
+
+  let best = null;
+  for (const { label } of rows) {
+    const m = label.match(/^([A-Za-z]+)(\d+)$/);
+    if (!m) continue;
+    const num = parseInt(m[2], 10);
+    if (!best || num > best.num) best = { prefix: m[1], num, width: m[2].length };
+  }
+
+  if (!best) {
+    const prefix = FALLBACK_LABEL_PREFIX[deviceName.toUpperCase()] || deviceName.slice(0, 3).toUpperCase();
+    return res.json({ label: `${prefix}0001` });
+  }
+
+  const label = `${best.prefix}${String(best.num + 1).padStart(best.width, '0')}`;
+  res.json({ label });
+});
+
 router.get('/:id', requireAuth, async (req, res) => {
   const asset = await db('assets').where({ id: req.params.id }).first();
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
@@ -214,6 +246,8 @@ router.post('/import', requireAuth, requireAdmin, upload.single('file'), async (
       else if (DATE_FIELDS.has(field)) value = toImportDate(value);
       else if (NUMBER_FIELDS.has(field)) value = toImportNumber(value);
       else if (value !== null) value = String(value).trim() || null;
+
+      if (field === 'line_manager' && value) value = value.replace(/\s*\([^)]*\)\s*$/, '').trim() || null;
 
       record[field] = value;
     }
