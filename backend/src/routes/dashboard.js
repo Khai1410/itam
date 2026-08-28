@@ -78,14 +78,45 @@ router.get('/summary', requireAuth, async (req, res) => {
     if (STATUSES.includes(r.condition)) statusCounts[r.condition] = Number(r.count);
   });
 
+  const [{ sum: totalValue }] = await db('assets').sum('price as sum');
+
+  const [licenseRow] = await db('assets')
+    .where('device_name', 'LAPTOP')
+    .select(
+      db.raw('count(*) as total'),
+      db.raw('count(*) filter (where license_win11 = true) as licensed')
+    );
+
+  const activityLimit = Math.min(Math.max(parseInt(req.query.activityLimit, 10) || 30, 1), 100);
+  const { rows: recentActivity } = await db.raw(`
+    select * from (
+      select h.id, h.employee_name, h.employee_account, a.label, a.device_name,
+             h.assigned_at as event_at, 'assigned' as event_type
+      from asset_assignment_history h join assets a on a.id = h.asset_id
+      union all
+      select h.id, h.employee_name, h.employee_account, a.label, a.device_name,
+             h.unassigned_at as event_at, 'returned' as event_type
+      from asset_assignment_history h join assets a on a.id = h.asset_id
+      where h.unassigned_at is not null
+    ) events
+    order by event_at desc
+    limit ?
+  `, [activityLimit]);
+
   res.json({
     total: Number(totalRow.count),
+    totalValue: Number(totalValue) || 0,
+    licenseStats: {
+      total: Number(licenseRow.total),
+      licensed: Number(licenseRow.licensed),
+    },
     statusCounts,
     byType,
     byLocation,
     byBusinessUnit,
     byChip,
     byStorage,
+    recentActivity,
   });
 });
 
