@@ -35,7 +35,7 @@ export default function Employees() {
       setManagerOptions(
         res.data
           .filter((e) => e.name)
-          .map((e) => ({ value: e.name, label: `${e.name}${e.account ? ` (${e.account})` : ''}`, account: e.account }))
+          .map((e) => ({ value: e.name, label: e.name, account: e.account }))
       )
     );
   }, []);
