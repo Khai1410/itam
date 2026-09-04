@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Popconfirm, message, Tooltip } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, Popconfirm, message, Tooltip, Tag } from 'antd';
+import { PlusOutlined, DeleteOutlined, WindowsOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import { useAuth } from '../auth.jsx';
 
@@ -42,6 +42,12 @@ export default function Users() {
     fetchData();
   };
 
+  const handleRoleChange = async (id, role) => {
+    await client.patch(`/auth/users/${id}/role`, { role });
+    message.success('Role updated');
+    fetchData();
+  };
+
   return (
     <div>
       <div className="toolbar">
@@ -61,7 +67,37 @@ export default function Users() {
           dataSource={rows}
           columns={[
             { title: 'Username', dataIndex: 'username' },
-            { title: 'Role', dataIndex: 'role' },
+            {
+              title: 'Sign-in',
+              dataIndex: 'provider',
+              width: 110,
+              render: (v) =>
+                v === 'azure' ? (
+                  <Tag icon={<WindowsOutlined />} color="blue">Microsoft</Tag>
+                ) : (
+                  <Tag>Local</Tag>
+                ),
+            },
+            {
+              title: 'Role',
+              dataIndex: 'role',
+              width: 190,
+              render: (role, record) =>
+                record.id === currentUser.id ? (
+                  role
+                ) : (
+                  <Select
+                    size="small"
+                    value={role}
+                    style={{ width: 170 }}
+                    onChange={(value) => handleRoleChange(record.id, value)}
+                    options={[
+                      { value: 'viewer', label: 'Viewer (read-only)' },
+                      { value: 'admin', label: 'Admin (full access)' },
+                    ]}
+                  />
+                ),
+            },
             { title: 'Created At', dataIndex: 'created_at', render: (v) => new Date(v).toLocaleDateString('en-GB') },
             {
               title: '',

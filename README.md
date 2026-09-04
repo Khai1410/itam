@@ -59,9 +59,32 @@ Every variable has a working default, so `.env` is entirely optional for a first
 | `EMPLOYEE_EMAIL_DOMAIN` | If set, auto-appends this domain to any employee account typed without an `@` (e.g. `jdoe` → `jdoe@example.com`) |
 | `ORG_NAME` | Shown in the sidebar and login screen | 
 | `SENDER_NAME`, `SENDER_TITLE`, `SENDER_ADDRESS`, `SENDER_MOBILE`, `SENDER_EMAIL`, `SENDER_WEB` | IT contact details used in the handover-confirmation email template on the Employee Lookup page |
+| `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` | Enables "Sign in with Microsoft" (Azure AD / Entra ID SSO). Leave blank to disable — see below |
 
 **Logo**: replace `frontend/src/assets/orgLogo.js` (a single base64 `data:` URI export)
 with your own to rebrand the handover-email signature block.
+
+### Azure AD (Microsoft) SSO
+
+Optional. When configured, a "Sign in with Microsoft" button appears on the login
+screen alongside password login (password login always keeps working).
+
+1. Azure Portal → **Microsoft Entra ID** → **App registrations** → **New registration**.
+2. Add a **Web** redirect URI: `https://<your-domain>/api/auth/azure/callback`
+   (use `http://localhost:8080/api/auth/azure/callback` for a local trial — Azure lets
+   you register multiple redirect URIs, so you can keep both).
+3. **API permissions**: Microsoft Graph → `openid`, `profile`, `email` (usually granted
+   by default).
+4. **Certificates & secrets** → **New client secret** → copy the secret **value** (not
+   the ID) immediately — it's shown once.
+5. Set `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET` in `.env` (Tenant
+   ID and Client ID are on the app registration's Overview page), then
+   `docker compose up -d backend`.
+
+The first time someone signs in with Microsoft, an account is auto-created for their
+email with the `viewer` role. Promote them to `admin` from the **Accounts** page (as an
+existing admin) if needed — role changes and account deletion both work the same way
+for Microsoft and password accounts.
 
 ## Features
 
@@ -76,8 +99,9 @@ with your own to rebrand the handover-email signature block.
   formatting intact)
 - **Employees** — list/add/edit/delete, bulk-select and delete (e.g. departed staff),
   onboarding form
-- **Accounts** (admin only) — create/delete `admin` or `viewer` users; viewers get
-  read-only access everywhere
+- **Accounts** (admin only) — create/delete `admin` or `viewer` users, change roles;
+  viewers get read-only access everywhere; optional "Sign in with Microsoft" (Azure AD)
+  alongside password login
 
 ## Importing existing data
 

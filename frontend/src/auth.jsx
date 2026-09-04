@@ -10,11 +10,20 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null;
   });
 
-  const login = async (username, password) => {
-    const { data } = await client.post('/auth/login', { username, password });
+  const applySession = (data) => {
     localStorage.setItem('itam_token', data.token);
     localStorage.setItem('itam_user', JSON.stringify(data.user));
     setUser(data.user);
+  };
+
+  const login = async (username, password) => {
+    const { data } = await client.post('/auth/login', { username, password });
+    applySession(data);
+  };
+
+  const ssoLogin = async (code) => {
+    const { data } = await client.post('/auth/sso/exchange', { code });
+    applySession(data);
   };
 
   const logout = () => {
@@ -24,7 +33,7 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, login, logout, isAdmin: user?.role === 'admin' }),
+    () => ({ user, login, ssoLogin, logout, isAdmin: user?.role === 'admin' }),
     [user]
   );
 
