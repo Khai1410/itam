@@ -78,6 +78,7 @@ function applyFilters(query, params) {
     query = query.where((builder) => {
       builder
         .whereILike('label', `%${q}%`)
+        .orWhereILike('old_label', `%${q}%`)
         .orWhereILike('serial_number', `%${q}%`)
         .orWhereILike('description', `%${q}%`)
         .orWhereILike('employee_name', `%${q}%`);
