@@ -6,6 +6,7 @@ import {
   UserSwitchOutlined,
   TeamOutlined,
   SafetyCertificateOutlined,
+  KeyOutlined,
   LogoutOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
@@ -29,6 +30,7 @@ const PAGE_TITLES = {
   '/employee-lookup': 'Employee Asset Lookup',
   '/employees': 'Employees',
   '/users': 'Account Management',
+  '/system-accounts': 'System Accounts',
 };
 
 function initials(name) {
@@ -48,7 +50,11 @@ export default function Layout() {
   }, [location.pathname]);
 
   const navItems = isAdmin
-    ? [...NAV_ITEMS, { key: '/users', label: 'Accounts', icon: <SafetyCertificateOutlined /> }]
+    ? [
+        ...NAV_ITEMS,
+        { key: '/users', label: 'Accounts', icon: <SafetyCertificateOutlined /> },
+        { key: '/system-accounts', label: 'System Accounts', icon: <KeyOutlined /> },
+      ]
     : NAV_ITEMS;
 
   return (

@@ -7,6 +7,7 @@ import Assets from './pages/Assets.jsx';
 import EmployeeLookup from './pages/EmployeeLookup.jsx';
 import Employees from './pages/Employees.jsx';
 import Users from './pages/Users.jsx';
+import SystemAccounts from './pages/SystemAccounts.jsx';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="employee-lookup" element={<EmployeeLookup />} />
           <Route path="employees" element={<Employees />} />
           <Route path="users" element={<Users />} />
+          <Route path="system-accounts" element={<SystemAccounts />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

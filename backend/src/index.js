@@ -7,6 +7,7 @@ const assetRoutes = require('./routes/assets');
 const employeeRoutes = require('./routes/employees');
 const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
+const systemAccountRoutes = require('./routes/systemAccounts');
 
 const app = express();
 app.use(cors());
@@ -19,6 +20,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/system-accounts', systemAccountRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
