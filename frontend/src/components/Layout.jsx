@@ -7,6 +7,7 @@ import {
   TeamOutlined,
   SafetyCertificateOutlined,
   KeyOutlined,
+  CloudServerOutlined,
   LogoutOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { key: '/assets', label: 'Assets', icon: <LaptopOutlined /> },
   { key: '/employee-lookup', label: 'Employee Lookup', icon: <UserSwitchOutlined /> },
   { key: '/employees', label: 'Employees', icon: <TeamOutlined /> },
+  { key: '/services', label: 'Currently Services', icon: <CloudServerOutlined /> },
 ];
 
 const PAGE_TITLES = {
@@ -29,6 +31,7 @@ const PAGE_TITLES = {
   '/assets': 'Asset Management',
   '/employee-lookup': 'Employee Asset Lookup',
   '/employees': 'Employees',
+  '/services': 'Currently Services',
   '/users': 'Account Management',
   '/system-accounts': 'System Accounts',
 };
