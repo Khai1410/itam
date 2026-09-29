@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Select, Table, Spin, Descriptions, Tag, Button, message } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, HistoryOutlined } from '@ant-design/icons';
 import client from '../api/client';
 import { ORG_LOGO_DATA_URI } from '../assets/orgLogo.js';
 import ResizableTitle from '../components/ResizableTitle.jsx';
@@ -252,6 +252,36 @@ export default function EmployeeLookup() {
               tableLayout="fixed"
               columns={resizableAssetColumns}
               components={{ header: { cell: ResizableTitle } }}
+            />
+          </div>
+
+          <div className="panel">
+            <h3>
+              <HistoryOutlined /> Assignment History ({result.history.length})
+            </h3>
+            <Table
+              rowKey="id"
+              size="small"
+              dataSource={result.history}
+              pagination={false}
+              locale={{ emptyText: 'No assignment history yet' }}
+              columns={[
+                { title: 'Type', dataIndex: 'device_name', width: 110 },
+                { title: 'Label', dataIndex: 'label', width: 110 },
+                { title: 'Description', dataIndex: 'description', ellipsis: true },
+                {
+                  title: 'Assigned At',
+                  dataIndex: 'assigned_at',
+                  width: 160,
+                  render: (v) => (v ? new Date(v).toLocaleString('en-GB') : ''),
+                },
+                {
+                  title: 'Unassigned At',
+                  dataIndex: 'unassigned_at',
+                  width: 160,
+                  render: (v) => (v ? new Date(v).toLocaleString('en-GB') : <Tag color="#1baf7a">Current</Tag>),
+                },
+              ]}
             />
           </div>
 

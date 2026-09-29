@@ -78,7 +78,27 @@ router.get('/:id/assets', requireAuth, async (req, res) => {
     .orWhere({ employee_id: employee.account })
     .orderBy('device_name');
 
-  res.json({ employee, assets });
+  const history = await db('asset_assignment_history as h')
+    .join('assets as a', 'a.id', 'h.asset_id')
+    .where((builder) => {
+      builder.where('h.employee_name', employee.name);
+      if (employee.account) builder.orWhere('h.employee_account', employee.account);
+    })
+    .select(
+      'h.id',
+      'h.assigned_at',
+      'h.unassigned_at',
+      'h.handled_by',
+      'a.id as asset_id',
+      'a.device_name',
+      'a.label',
+      'a.description',
+      'a.serial_number',
+      'a.condition'
+    )
+    .orderBy('h.assigned_at', 'desc');
+
+  res.json({ employee, assets, history });
 });
 
 module.exports = router;
