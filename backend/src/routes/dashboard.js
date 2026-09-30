@@ -82,6 +82,7 @@ router.get('/summary', requireAuth, async (req, res) => {
 
   const [licenseRow] = await db('assets')
     .where('device_name', 'LAPTOP')
+    .whereNot('brand', 'Apple') // Win 11 license only applies to Windows laptops
     .select(
       db.raw('count(*) as total'),
       db.raw('count(*) filter (where license_win11 = true) as licensed')
