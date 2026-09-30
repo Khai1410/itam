@@ -32,10 +32,15 @@ app.use((err, req, res, next) => {
 });
 
 if (teamsConfigured()) {
-  cron.schedule('0 8 * * *', () => {
+  cron.schedule('0 9 * * *', () => {
     checkServiceExpirations().catch((err) => console.error('Teams expiration check failed:', err));
   });
-  console.log('Service expiration Teams alerts scheduled (daily at 08:00).');
+  console.log('Service expiration Teams alerts scheduled (daily at 09:00).');
+
+  // This app only runs while the machine is on, so the 09:00 schedule above
+  // gets silently skipped on any day the machine boots later than that — also
+  // run once on startup (per-service dedup makes this safe, never double-alerts).
+  checkServiceExpirations().catch((err) => console.error('Startup Teams expiration check failed:', err));
 }
 
 const port = process.env.PORT || 4000;
