@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Form, Input, Button, Alert, Divider, Spin } from 'antd';
-import { UserOutlined, LockOutlined, WindowsOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, WindowsOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import client from '../api/client';
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'Your Company';
-
-function initials(name) {
-  if (!name) return '?';
-  return name.slice(0, 2).toUpperCase();
-}
 
 export default function Login() {
   const { login, ssoLogin } = useAuth();
@@ -70,7 +65,9 @@ export default function Login() {
     <div className="itam-login-screen">
       <div className="itam-login-card">
         <div className="itam-login-brand">
-          <div className="mark">{initials(ORG_NAME)}</div>
+          <div className="mark">
+            <LaptopOutlined />
+          </div>
           <div className="title">IT Asset Management</div>
           <div className="subtitle">Sign in to manage {ORG_NAME}'s IT assets</div>
         </div>

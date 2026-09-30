@@ -64,7 +64,9 @@ export default function Layout() {
     <AntLayout className="itam-layout">
       <Sider width={232} className={`itam-sider${mobileOpen ? ' mobile-open' : ''}`}>
         <div className="itam-brand">
-          <div className="mark">{initials(ORG_NAME)}</div>
+          <div className="mark">
+            <LaptopOutlined />
+          </div>
           <div>
             <div className="title">IT Asset Management</div>
             <div className="subtitle">{ORG_NAME}</div>
