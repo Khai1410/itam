@@ -14,7 +14,7 @@ router.get('/alerts/status', (req, res) => {
 router.post('/alerts/check-now', requireAdmin, async (req, res) => {
   if (!teamsConfigured()) return res.status(400).json({ error: 'TEAMS_WEBHOOK_URL is not configured' });
   try {
-    const result = await checkServiceExpirations();
+    const result = await checkServiceExpirations({ force: true });
     res.json(result);
   } catch (err) {
     console.error('Teams expiration check failed:', err);

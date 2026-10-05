@@ -13,25 +13,29 @@ async function sendTeamsMessage(text) {
   if (!res.ok) throw new Error(`Teams webhook responded ${res.status}`);
 }
 
-// Finds services expiring within the alert window that haven't already been
-// alerted for their current expiration_date, sends one Teams message per
-// service, and marks them so the daily job doesn't repeat the same alert.
-// Re-fires automatically if a service is renewed to a new expiration_date.
-async function checkServiceExpirations() {
+// Finds services expiring within the alert window and nags about each of
+// them — keeps repeating until the expiration_date is updated (renewed) past
+// the window, by design, so the reminder can't be missed. The automatic
+// schedule (startup + 09:00) is throttled to once per calendar day per
+// service; a manual run (force: true, from the "Check Now" button) always
+// sends regardless of when it last fired.
+async function checkServiceExpirations({ force = false } = {}) {
   if (!teamsConfigured()) return { sent: 0, skipped: 'Teams webhook not configured' };
 
   const alertDays = parseInt(process.env.SERVICE_ALERT_DAYS, 10) || 60;
 
-  const due = await db('services')
+  let query = db('services')
     .whereNotNull('expiration_date')
     .where('expiration_date', '>=', db.fn.now())
-    .whereRaw(`expiration_date <= CURRENT_DATE + ?::int`, [alertDays])
-    .where((builder) => {
-      builder
-        .whereNull('alerted_expiration_date')
-        .orWhereRaw('alerted_expiration_date != expiration_date');
-    })
-    .orderBy('expiration_date');
+    .whereRaw(`expiration_date <= CURRENT_DATE + ?::int`, [alertDays]);
+
+  if (!force) {
+    query = query.where((builder) => {
+      builder.whereNull('last_alert_sent_at').orWhereRaw('last_alert_sent_at::date < CURRENT_DATE');
+    });
+  }
+
+  const due = await query.orderBy('expiration_date');
 
   let sent = 0;
   for (const service of due) {
