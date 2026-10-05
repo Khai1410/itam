@@ -1,6 +1,6 @@
 import { Tooltip } from 'antd';
 
-export default function BarList({ rows, labelKey, valueKey = 'quantity', color = 'var(--series-1)' }) {
+export default function BarList({ rows, labelKey, valueKey = 'quantity', color = 'var(--series-1)', onRowClick }) {
   const max = Math.max(1, ...rows.map((r) => Number(r[valueKey]) || 0));
   const total = rows.reduce((sum, r) => sum + (Number(r[valueKey]) || 0), 0) || 1;
   const sorted = [...rows].sort((a, b) => (b[valueKey] || 0) - (a[valueKey] || 0));
@@ -11,8 +11,14 @@ export default function BarList({ rows, labelKey, valueKey = 'quantity', color =
         const value = Number(row[valueKey]) || 0;
         const pct = Math.round((value / total) * 100);
         return (
-          <Tooltip key={row[labelKey]} title={`${row[labelKey]}: ${value} (${pct}% of total)`}>
-            <div className="bar-row">
+          <Tooltip
+            key={row[labelKey]}
+            title={`${row[labelKey]}: ${value} (${pct}% of total)${onRowClick ? ' — click to view in Assets' : ''}`}
+          >
+            <div
+              className={`bar-row${onRowClick ? ' bar-row-clickable' : ''}`}
+              onClick={onRowClick ? () => onRowClick(row[labelKey]) : undefined}
+            >
               <div className="bar-label">{row[labelKey]}</div>
               <div className="bar-track">
                 <div

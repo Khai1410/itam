@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Spin, Tooltip, Button, Modal, Checkbox } from 'antd';
 import {
   AppstoreOutlined,
@@ -64,9 +65,13 @@ function loadHeights() {
   }
 }
 
-function KpiTile({ label, value, sub, color, icon }) {
+function KpiTile({ label, value, sub, color, icon, onClick }) {
   return (
-    <div className="kpi-tile" style={{ '--tile-color': color }}>
+    <div
+      className={`kpi-tile${onClick ? ' kpi-tile-clickable' : ''}`}
+      style={{ '--tile-color': color }}
+      onClick={onClick}
+    >
       <div className="kpi-tile-icon">{icon}</div>
       <div className="kpi-tile-body">
         <div className="kpi-tile-value">{value}</div>
@@ -77,7 +82,7 @@ function KpiTile({ label, value, sub, color, icon }) {
   );
 }
 
-function StatusOverview({ statusCounts, total }) {
+function StatusOverview({ statusCounts, total, onStatusClick }) {
   const entries = Object.entries(statusCounts).filter(([, v]) => v > 0);
   return (
     <div className="status-overview-card">
@@ -86,17 +91,18 @@ function StatusOverview({ statusCounts, total }) {
       </h3>
       <div className="status-bar-track">
         {entries.map(([status, value]) => (
-          <Tooltip key={status} title={`${status}: ${value} (${Math.round((value / total) * 100)}%)`}>
+          <Tooltip key={status} title={`${status}: ${value} (${Math.round((value / total) * 100)}%) — click to view`}>
             <div
-              className="status-bar-seg"
+              className="status-bar-seg status-bar-seg-clickable"
               style={{ width: `${(value / total) * 100}%`, background: STATUS_META[status]?.color }}
+              onClick={() => onStatusClick(status)}
             />
           </Tooltip>
         ))}
       </div>
       <div className="status-legend">
         {entries.map(([status, value]) => (
-          <div className="status-legend-item" key={status}>
+          <div className="status-legend-item status-legend-item-clickable" key={status} onClick={() => onStatusClick(status)}>
             <span className="status-legend-dot" style={{ background: STATUS_META[status]?.color }} />
             {status} <b>{value}</b>
           </div>
@@ -118,16 +124,44 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('en-GB');
 }
 
-function panelBody(id, data) {
+function panelBody(id, data, goToAssets) {
   switch (id) {
     case 'byType':
-      return <BarList rows={data.byType} labelKey="device_name" color="var(--series-1)" />;
+      return (
+        <BarList
+          rows={data.byType}
+          labelKey="device_name"
+          color="var(--series-1)"
+          onRowClick={(deviceName) => goToAssets({ type: deviceName })}
+        />
+      );
     case 'byLocation':
-      return <BarList rows={data.byLocation} labelKey="location" color="var(--series-2)" />;
+      return (
+        <BarList
+          rows={data.byLocation}
+          labelKey="location"
+          color="var(--series-2)"
+          onRowClick={(location) => goToAssets({ location })}
+        />
+      );
     case 'byBusinessUnit':
-      return <BarList rows={data.byBusinessUnit} labelKey="business_unit" color="var(--series-3)" />;
+      return (
+        <BarList
+          rows={data.byBusinessUnit}
+          labelKey="business_unit"
+          color="var(--series-3)"
+          onRowClick={(businessUnit) => goToAssets({ businessUnit })}
+        />
+      );
     case 'byChip':
-      return <BarList rows={data.byChip} labelKey="chip" color="var(--series-4)" />;
+      return (
+        <BarList
+          rows={data.byChip}
+          labelKey="chip"
+          color="var(--series-4)"
+          onRowClick={(chip) => goToAssets({ type: 'LAPTOP', chip })}
+        />
+      );
     case 'byStorage':
       return <BarList rows={data.byStorage} labelKey="storage" color="var(--series-5)" />;
     case 'recentActivity':
@@ -203,11 +237,22 @@ function LayoutEditor({ layout, onChange, onReset }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [layout, setLayout] = useState(loadLayout);
   const [heights, setHeights] = useState(loadHeights);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const panelRefs = useRef({});
+
+  const goToAssets = (params = {}) => {
+    const usp = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((v) => usp.append(key, v));
+      else if (value !== undefined && value !== null && value !== '') usp.append(key, value);
+    });
+    const query = usp.toString();
+    navigate(query ? `/assets?${query}` : '/assets');
+  };
 
   useEffect(() => {
     client.get('/dashboard/summary').then((res) => setData(res.data));
@@ -248,14 +293,18 @@ export default function Dashboard() {
   return (
     <div>
       <div className="dash-hero-row">
-        <div className="hero-card">
+        <div className="hero-card hero-card-clickable" onClick={() => goToAssets()}>
           <div className="hero-icon">
             <AppstoreOutlined />
           </div>
           <div className="hero-value">{data.total.toLocaleString('en-US')}</div>
           <div className="hero-label">Total Devices</div>
         </div>
-        <StatusOverview statusCounts={data.statusCounts} total={data.total} />
+        <StatusOverview
+          statusCounts={data.statusCounts}
+          total={data.total}
+          onStatusClick={(status) => goToAssets({ status })}
+        />
       </div>
 
       <div className="kpi-row">
@@ -270,12 +319,14 @@ export default function Dashboard() {
           value={data.statusCounts.Damaged}
           color="var(--status-damaged)"
           icon={<WarningOutlined />}
+          onClick={() => goToAssets({ status: 'Damaged' })}
         />
         <KpiTile
           label="Lost"
           value={data.statusCounts.Lost}
           color="var(--status-lost)"
           icon={<QuestionCircleOutlined />}
+          onClick={() => goToAssets({ status: 'Lost' })}
         />
         <KpiTile
           label="Win 11 Licensed"
@@ -283,6 +334,7 @@ export default function Dashboard() {
           sub={`${data.licenseStats.licensed}/${data.licenseStats.total} laptops`}
           color="var(--series-3)"
           icon={<SafetyCertificateOutlined />}
+          onClick={() => goToAssets({ type: 'LAPTOP', license: 'true' })}
         />
       </div>
 
@@ -310,7 +362,7 @@ export default function Dashboard() {
               <h3>
                 {PANEL_META[id].icon} {PANEL_META[id].title}
               </h3>
-              <div className="panel-body">{panelBody(id, data)}</div>
+              <div className="panel-body">{panelBody(id, data, goToAssets)}</div>
             </div>
           ))}
       </div>

@@ -461,6 +461,35 @@ body {
   box-shadow: var(--shadow-sm), inset 3px 0 0 var(--tile-color, var(--brand));
 }
 
+/* ---------- Dashboard -> Assets drill-through ---------- */
+
+.kpi-tile-clickable,
+.hero-card-clickable,
+.status-bar-seg-clickable,
+.status-legend-item-clickable,
+.bar-row-clickable {
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease;
+}
+
+.kpi-tile-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), inset 3px 0 0 var(--tile-color, var(--brand));
+}
+
+.hero-card-clickable:hover {
+  filter: brightness(1.06);
+}
+
+.status-bar-seg-clickable:hover,
+.bar-row-clickable:hover .bar-fill {
+  filter: brightness(1.12);
+}
+
+.status-legend-item-clickable:hover {
+  color: var(--text-primary);
+}
+
 .kpi-tile-icon {
   width: 34px;
   height: 34px;

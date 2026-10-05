@@ -1,10 +1,30 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Table, Input, Select, Button, Modal, Form, Space, message, InputNumber, DatePicker, Checkbox, Dropdown, Tag, Upload } from 'antd';
+import { useSearchParams } from 'react-router-dom';
+import { Table, Input, Select, Button, Modal, Form, Space, message, InputNumber, DatePicker, Checkbox, Dropdown, Tag, Upload, Tooltip } from 'antd';
 import { PlusOutlined, DownloadOutlined, UploadOutlined, EditOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import client from '../api/client';
 import { useAuth } from '../auth.jsx';
 import ResizableTitle from '../components/ResizableTitle.jsx';
+
+const MULTI_FILTER_KEYS = [
+  'type', 'status', 'location', 'businessUnit', 'jobFamily', 'project', 'brand', 'chip', 'employee', 'employeeDept',
+];
+
+// Lets the Dashboard deep-link here with a filter already applied
+// (e.g. clicking "Damaged" navigates to /assets?status=Damaged).
+function filtersFromSearchParams(searchParams) {
+  const f = {};
+  MULTI_FILTER_KEYS.forEach((key) => {
+    const values = searchParams.getAll(key);
+    if (values.length) f[key] = values;
+  });
+  const license = searchParams.get('license');
+  if (license) f.license = license;
+  const q = searchParams.get('q');
+  if (q) f.q = q;
+  return f;
+}
 
 const DEVICE_TYPES = ['LAPTOP', 'MONITOR', 'MOUSE', 'IPAD', 'SMARTPHONE', 'CABLE', 'SSD', 'RAM', 'CPU', 'ROUTER', 'PRINTER', 'SPEAKER'];
 const STATUSES = ['In Use', 'In Stock', 'Damaged', 'Lost', 'Sold', 'Warranty'];
@@ -106,13 +126,14 @@ async function downloadExport(format, params) {
 
 export default function Assets() {
   const { isAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState(INITIAL_COLUMNS);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams));
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form] = Form.useForm();
@@ -324,6 +345,7 @@ export default function Assets() {
           placeholder="Search by label, serial, description, employee..."
           allowClear
           style={{ width: 280 }}
+          defaultValue={filters.q}
           onSearch={(q) => {
             setPage(1);
             setFilters((f) => ({ ...f, q }));
@@ -335,6 +357,7 @@ export default function Assets() {
           placeholder="Device Type"
           allowClear
           style={{ width: 180 }}
+          value={filters.type}
           options={DEVICE_TYPES.map((v) => ({ value: v, label: v }))}
           onChange={(type) => {
             setPage(1);
@@ -347,6 +370,7 @@ export default function Assets() {
           placeholder="Status"
           allowClear
           style={{ width: 160 }}
+          value={filters.status}
           options={STATUSES.map((v) => ({ value: v, label: v }))}
           onChange={(status) => {
             setPage(1);
@@ -359,6 +383,7 @@ export default function Assets() {
           placeholder="Location"
           allowClear
           style={{ width: 140 }}
+          value={filters.location}
           options={LOCATIONS.map((v) => ({ value: v, label: v }))}
           onChange={(location) => {
             setPage(1);
@@ -371,6 +396,7 @@ export default function Assets() {
           placeholder="Business Unit"
           allowClear
           style={{ width: 190 }}
+          value={filters.businessUnit}
           options={BUSINESS_UNITS.map((v) => ({ value: v, label: v }))}
           onChange={(businessUnit) => {
             setPage(1);
@@ -383,6 +409,7 @@ export default function Assets() {
           placeholder="Job Family"
           allowClear
           style={{ width: 180 }}
+          value={filters.jobFamily}
           options={JOB_FAMILIES.map((v) => ({ value: v, label: v }))}
           onChange={(jobFamily) => {
             setPage(1);
@@ -395,6 +422,7 @@ export default function Assets() {
           placeholder="Project"
           allowClear
           style={{ width: 180 }}
+          value={filters.project}
           options={PROJECTS.map((v) => ({ value: v, label: v }))}
           onChange={(project) => {
             setPage(1);
@@ -407,6 +435,7 @@ export default function Assets() {
           placeholder="Brand"
           allowClear
           style={{ width: 160 }}
+          value={filters.brand}
           options={BRANDS.map((v) => ({ value: v, label: v }))}
           onChange={(brand) => {
             setPage(1);
@@ -419,6 +448,7 @@ export default function Assets() {
           placeholder="Chip"
           allowClear
           style={{ width: 120 }}
+          value={filters.chip}
           options={CHIPS.map((v) => ({ value: v, label: v }))}
           onChange={(chip) => {
             setPage(1);
@@ -429,6 +459,7 @@ export default function Assets() {
           placeholder="License Win 11 Pro"
           allowClear
           style={{ width: 170 }}
+          value={filters.license}
           options={[
             { value: 'true', label: 'Licensed' },
             { value: 'false', label: 'Not Licensed' },
@@ -440,17 +471,38 @@ export default function Assets() {
         />
         <Select
           mode="multiple"
-          maxTagCount="responsive"
+          maxTagCount={2}
           showSearch
           placeholder="Assigned To"
           allowClear
-          style={{ width: 220 }}
+          style={{ width: 240 }}
+          value={filters.employee}
           optionFilterProp="label"
           options={employees.map((e) => ({ value: e.name, label: `${e.name} (${e.account || '-'})` }))}
           onChange={(employee) => {
             setPage(1);
             setFilters((f) => ({ ...f, employee }));
           }}
+          tagRender={({ label, value, closable, onClose }) => {
+            // The "+N more" overflow summary is also routed through tagRender —
+            // it isn't closable (can't close an aggregate), so render its own
+            // label (from maxTagPlaceholder) instead of `value`, which is unset for it.
+            if (!closable) {
+              return <span style={{ color: 'var(--text-secondary)', fontSize: 12.5, padding: '0 4px' }}>{label}</span>;
+            }
+            return (
+              <Tag closable={closable} onClose={onClose} style={{ marginInlineEnd: 4, maxWidth: 140 }}>
+                <span style={{ display: 'inline-block', maxWidth: 122, overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }}>
+                  {value}
+                </span>
+              </Tag>
+            );
+          }}
+          maxTagPlaceholder={(omitted) => (
+            <Tooltip title={omitted.map((o) => o.value).join(', ')}>
+              <span>+{omitted.length} more</span>
+            </Tooltip>
+          )}
         />
         <Select
           mode="multiple"
@@ -458,6 +510,7 @@ export default function Assets() {
           placeholder="Employee Dept"
           allowClear
           style={{ width: 180 }}
+          value={filters.employeeDept}
           options={JOB_FAMILIES.map((v) => ({ value: v, label: v }))}
           onChange={(employeeDept) => {
             setPage(1);
