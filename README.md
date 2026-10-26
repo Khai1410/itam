@@ -95,8 +95,8 @@ for Microsoft and password accounts.
   assignment history with timestamps; Excel/CSV export respecting active filters, and
   bulk import/update from an `.xlsx` using the same column layout
 - **Employee Lookup** — pick an employee to see everything assigned to them, plus a
-  ready-to-copy handover-confirmation email (HTML, pastes into Outlook/Gmail with
-  formatting intact)
+  handover-confirmation email preview with a "Send" button (admin only) that sends it
+  for real via Microsoft Graph — see the Azure AD setup above (Mail.Send permission)
 - **Employees** — list/add/edit/delete, bulk-select and delete (e.g. departed staff),
   onboarding form
 - **Accounts** (admin only) — create/delete `admin` or `viewer` users, change roles;

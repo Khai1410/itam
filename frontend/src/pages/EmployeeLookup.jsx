@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Select, Table, Spin, Descriptions, Tag, Button, message } from 'antd';
-import { CopyOutlined, HistoryOutlined } from '@ant-design/icons';
+import { SendOutlined, HistoryOutlined } from '@ant-design/icons';
 import client from '../api/client';
+import { useAuth } from '../auth.jsx';
 import { ORG_LOGO_DATA_URI } from '../assets/orgLogo.js';
 import ResizableTitle from '../components/ResizableTitle.jsx';
 
@@ -111,44 +112,13 @@ function buildEmailHtml(employee, assets) {
 </div>`;
 }
 
-function buildEmailPlainText(employee, assets) {
-  const lines = assets.length
-    ? assets
-        .map(
-          (a, i) =>
-            `${i + 1}. ${a.label || '-'} | ${a.device_name || '-'} | ${a.description || '-'} | S/N: ${
-              a.serial_number || '-'
-            } | ${a.location || '-'} | ${a.condition || '-'}`
-        )
-        .join('\n')
-    : '(no devices assigned)';
-
-  return `Hi ${firstNameOf(employee.name)},
-
-IT confirms that the equipment have been handed over as per the information below:
-
-${lines}
-
-Please review the information above and let us know if any corrections are required.
-
-Thanks and Best Regards,
-
-${[
-    `${SENDER.name} | ${SENDER.title}`,
-    SENDER.address && `A: ${SENDER.address}`,
-    SENDER.mobile && `M: ${SENDER.mobile}`,
-    `E: ${SENDER.email}`,
-    SENDER.web && `W: ${SENDER.web}`,
-  ]
-    .filter(Boolean)
-    .join('\n')}`;
-}
-
 export default function EmployeeLookup() {
+  const { isAdmin } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [assetColumns, setAssetColumns] = useState(INITIAL_ASSET_COLUMNS);
 
   useEffect(() => {
@@ -183,24 +153,24 @@ export default function EmployeeLookup() {
     }),
   }));
 
-  const handleCopy = async () => {
+  const handleSend = async () => {
     if (!result) return;
-    const html = buildEmailHtml(result.employee, result.assets);
-    const text = buildEmailPlainText(result.employee, result.assets);
+    if (!result.employee.account) {
+      message.error('This employee has no account/email on file');
+      return;
+    }
+    setSending(true);
     try {
-      if (window.ClipboardItem) {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([text], { type: 'text/plain' }),
-          }),
-        ]);
-      } else {
-        await navigator.clipboard.writeText(text);
-      }
-      message.success('Copied — paste into Outlook to keep the table & formatting');
-    } catch {
-      message.error('Could not copy — please copy manually');
+      await client.post('/mail/send', {
+        to: result.employee.account,
+        subject: EMAIL_SUBJECT,
+        html: buildEmailHtml(result.employee, result.assets),
+      });
+      message.success(`Sent to ${result.employee.account}`);
+    } catch (err) {
+      message.error(err.response?.data?.error || 'Could not send email');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -288,9 +258,11 @@ export default function EmployeeLookup() {
           <div className="panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ margin: 0 }}>Handover Confirmation Email</h3>
-              <Button size="small" type="primary" icon={<CopyOutlined />} onClick={handleCopy}>
-                Copy
-              </Button>
+              {isAdmin && (
+                <Button size="small" type="primary" icon={<SendOutlined />} loading={sending} onClick={handleSend}>
+                  Send
+                </Button>
+              )}
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 10 }}>
               <div>
