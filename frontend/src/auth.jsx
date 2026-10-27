@@ -49,3 +49,12 @@ export function RequireAuth({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
+
+// Viewers (any SSO sign-in) only get "My Assets" — their own employee info +
+// their own assigned devices. Everything else redirects them there, whether
+// they clicked a nav item that no longer renders for them or typed the URL.
+export function RequireAdmin({ children }) {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) return <Navigate to="/my-assets" replace />;
+  return children;
+}

@@ -18,7 +18,12 @@ const { Sider, Content } = AntLayout;
 
 const ORG_NAME = import.meta.env.VITE_ORG_NAME || 'Your Company';
 
-const NAV_ITEMS = [
+// Viewers (any SSO sign-in) only get "My Assets" — their own employee info +
+// their own assigned devices. Everything else here is admin-only, added
+// back in navItems below.
+const VIEWER_NAV_ITEMS = [{ key: '/my-assets', label: 'My Assets', icon: <LaptopOutlined /> }];
+
+const ADMIN_NAV_ITEMS = [
   { key: '/dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
   { key: '/assets', label: 'Assets', icon: <LaptopOutlined /> },
   { key: '/employee-lookup', label: 'Employee Lookup', icon: <UserSwitchOutlined /> },
@@ -29,6 +34,7 @@ const NAV_ITEMS = [
 const PAGE_TITLES = {
   '/dashboard': 'Overview',
   '/assets': 'Asset Management',
+  '/my-assets': 'My Assets',
   '/employee-lookup': 'Employee Asset Lookup',
   '/employees': 'Employees',
   '/services': 'Currently Services',
@@ -54,11 +60,11 @@ export default function Layout() {
 
   const navItems = isAdmin
     ? [
-        ...NAV_ITEMS,
+        ...ADMIN_NAV_ITEMS,
         { key: '/users', label: 'Accounts', icon: <SafetyCertificateOutlined /> },
         { key: '/system-accounts', label: 'System Accounts', icon: <KeyOutlined /> },
       ]
-    : NAV_ITEMS;
+    : VIEWER_NAV_ITEMS;
 
   return (
     <AntLayout className="itam-layout">

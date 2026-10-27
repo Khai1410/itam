@@ -2,8 +2,19 @@ const { Issuer } = require('openid-client');
 
 let clientPromise = null;
 
+// SSO uses its own app registration (AZURE_SSO_CLIENT_ID/SECRET) so it's
+// independent from the app registration used for sending mail via Graph
+// (AZURE_CLIENT_ID/SECRET) — falls back to the mail app's credentials if no
+// SSO-specific ones are set, for a simpler single-app setup.
+function ssoClientId() {
+  return process.env.AZURE_SSO_CLIENT_ID || process.env.AZURE_CLIENT_ID;
+}
+function ssoClientSecret() {
+  return process.env.AZURE_SSO_CLIENT_SECRET || process.env.AZURE_CLIENT_SECRET;
+}
+
 function azureConfigured() {
-  return Boolean(process.env.AZURE_TENANT_ID && process.env.AZURE_CLIENT_ID && process.env.AZURE_CLIENT_SECRET);
+  return Boolean(process.env.AZURE_TENANT_ID && ssoClientId() && ssoClientSecret());
 }
 
 // Discovery is a network call, so it's deferred until the first SSO request
@@ -17,8 +28,8 @@ async function getAzureClient() {
       `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`
     )
       .then((issuer) => new issuer.Client({
-        client_id: process.env.AZURE_CLIENT_ID,
-        client_secret: process.env.AZURE_CLIENT_SECRET,
+        client_id: ssoClientId(),
+        client_secret: ssoClientSecret(),
         response_types: ['code'],
       }))
       .catch((err) => {

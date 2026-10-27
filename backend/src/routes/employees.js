@@ -69,6 +69,24 @@ router.post('/bulk-delete', requireAuth, requireAdmin, async (req, res) => {
   res.json({ deleted });
 });
 
+// Self-service for SSO sign-ins: the logged-in account's own employee record +
+// their own assigned assets, nothing else — matched by username (SSO users'
+// username is their email) against employees.account. Declared before
+// "/:id/assets" so "me" doesn't get swallowed by the :id param.
+router.get('/me/assets', requireAuth, async (req, res) => {
+  const employee = await db('employees')
+    .whereRaw('lower(account) = lower(?)', [req.user.username])
+    .first();
+  if (!employee) return res.status(404).json({ error: 'No employee record is linked to this account' });
+
+  const assets = await db('assets')
+    .where({ employee_name: employee.name })
+    .orWhere({ employee_id: employee.account })
+    .orderBy('device_name');
+
+  res.json({ employee, assets });
+});
+
 router.get('/:id/assets', requireAuth, async (req, res) => {
   const employee = await db('employees').where({ id: req.params.id }).first();
   if (!employee) return res.status(404).json({ error: 'Employee not found' });
