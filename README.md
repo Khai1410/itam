@@ -121,7 +121,9 @@ file.
 
 `scripts/backup-db.ps1` (Windows/PowerShell) dumps the database via `pg_dump` to
 `backups/` with a timestamp, keeping the most recent 30. Schedule it with Windows Task
-Scheduler for automatic daily backups. Restore with:
+Scheduler for automatic daily backups. If OneDrive is signed in on the machine (`$env:OneDrive`
+set), each backup is also mirrored into `<OneDrive>/ITAM-Backups/` with the same retention,
+so a local disk/machine failure doesn't also mean losing every backup. Restore with:
 
 ```bash
 docker cp your_backup.dump itam-db-1:/tmp/restore.dump

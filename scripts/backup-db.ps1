@@ -1,5 +1,7 @@
 # Daily backup for the IT Asset Management PostgreSQL database (itam-db-1 container).
-# Runs via a Windows Scheduled Task at 10:00 AM. Keeps the last 30 daily backups.
+# Runs via a Windows Scheduled Task at 10:00 AM. Keeps the last 30 daily backups
+# locally, and mirrors the same retention window into OneDrive (if signed in on
+# this machine) so a local disk/machine failure doesn't also mean losing backups.
 
 $ErrorActionPreference = "Stop"
 
@@ -11,6 +13,12 @@ $containerFile = "/tmp/itam_backup_$timestamp.dump"
 $localFile = Join-Path $backupDir "itam_backup_$timestamp.dump"
 $retentionCount = 30
 $containerName = "itam-db-1"
+
+# OneDrive mirror: $env:OneDrive points at the signed-in account's local sync
+# folder (set by the OneDrive client); copying into it is enough, OneDrive
+# uploads automatically. Skipped entirely if OneDrive isn't signed in.
+$oneDriveRoot = $env:OneDrive
+$oneDriveBackupDir = if ($oneDriveRoot) { Join-Path $oneDriveRoot "ITAM-Backups" } else { $null }
 
 if (-not (Test-Path $backupDir)) {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
@@ -53,6 +61,33 @@ try {
             Remove-Item $_.FullName -Force
             Write-Log "Removed old backup: $($_.Name)"
         }
+
+    # Mirror into OneDrive so a local machine/disk failure doesn't also wipe backups.
+    if ($oneDriveBackupDir) {
+        try {
+            if (-not (Test-Path $oneDriveBackupDir)) {
+                New-Item -ItemType Directory -Path $oneDriveBackupDir -Force | Out-Null
+            }
+            Copy-Item -Path $localFile -Destination $oneDriveBackupDir -Force
+
+            Get-ChildItem -Path $oneDriveBackupDir -Filter "itam_backup_*.dump" |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -Skip $retentionCount |
+                ForEach-Object {
+                    Remove-Item $_.FullName -Force
+                    Write-Log "Removed old OneDrive backup: $($_.Name)"
+                }
+
+            Write-Log "Mirrored to OneDrive: $oneDriveBackupDir"
+        }
+        catch {
+            # OneDrive mirror failing should not fail the whole backup job.
+            Write-Log "OneDrive mirror FAILED (local backup still succeeded): $_"
+        }
+    }
+    else {
+        Write-Log "OneDrive not detected (`$env:OneDrive unset) - skipped mirror"
+    }
 }
 catch {
     Write-Log "Backup FAILED: $_"
