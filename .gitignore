@@ -5,3 +5,9 @@ dist/
 backups/
 .claude/
 System Account.xlsx
+
+# Taste Skill (design-taste-frontend) — installed dev tool + its scratch
+# build artifacts, not app code.
+.agents/
+.taste-skill/
+skills-lock.json

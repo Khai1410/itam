@@ -3,10 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Spin, Tooltip, Button, Modal, Checkbox } from 'antd';
 import {
   AppstoreOutlined,
-  WarningOutlined,
-  QuestionCircleOutlined,
-  DollarCircleOutlined,
-  SafetyCertificateOutlined,
   EnvironmentOutlined,
   TeamOutlined,
   ThunderboltOutlined,
@@ -65,19 +61,15 @@ function loadHeights() {
   }
 }
 
-function KpiTile({ label, value, sub, color, icon, onClick }) {
+// accent-ladder move: one container split by dividers, not four separate
+// cards — the full brand hue stays off the chrome here (it's the hero's
+// job) and only marks a cell whose number is a real negative signal.
+function KpiCell({ label, value, sub, tone, onClick }) {
   return (
-    <div
-      className={`kpi-tile${onClick ? ' kpi-tile-clickable' : ''}`}
-      style={{ '--tile-color': color }}
-      onClick={onClick}
-    >
-      <div className="kpi-tile-icon">{icon}</div>
-      <div className="kpi-tile-body">
-        <div className="kpi-tile-value">{value}</div>
-        <div className="kpi-tile-label">{label}</div>
-        {sub && <div className="kpi-tile-sub">{sub}</div>}
-      </div>
+    <div className={`kpi-cell${onClick ? ' kpi-cell-clickable' : ''}`} onClick={onClick}>
+      <div className="kpi-cell-label">{label}</div>
+      <div className={`kpi-cell-value${tone ? ` kpi-cell-value-${tone}` : ''}`}>{value}</div>
+      {sub && <div className="kpi-cell-sub">{sub}</div>}
     </div>
   );
 }
@@ -131,7 +123,6 @@ function panelBody(id, data, goToAssets) {
         <BarList
           rows={data.byType}
           labelKey="device_name"
-          color="var(--series-1)"
           onRowClick={(deviceName) => goToAssets({ type: deviceName })}
         />
       );
@@ -140,7 +131,6 @@ function panelBody(id, data, goToAssets) {
         <BarList
           rows={data.byLocation}
           labelKey="location"
-          color="var(--series-2)"
           onRowClick={(location) => goToAssets({ location })}
         />
       );
@@ -149,7 +139,6 @@ function panelBody(id, data, goToAssets) {
         <BarList
           rows={data.byBusinessUnit}
           labelKey="business_unit"
-          color="var(--series-3)"
           onRowClick={(businessUnit) => goToAssets({ businessUnit })}
         />
       );
@@ -158,12 +147,11 @@ function panelBody(id, data, goToAssets) {
         <BarList
           rows={data.byChip}
           labelKey="chip"
-          color="var(--series-4)"
           onRowClick={(chip) => goToAssets({ type: 'LAPTOP', chip })}
         />
       );
     case 'byStorage':
-      return <BarList rows={data.byStorage} labelKey="storage" color="var(--series-5)" />;
+      return <BarList rows={data.byStorage} labelKey="storage" />;
     case 'recentActivity':
       return (
         <>
@@ -291,12 +279,9 @@ export default function Dashboard() {
     : 0;
 
   return (
-    <div>
+    <div className="dash-page">
       <div className="dash-hero-row">
         <div className="hero-card hero-card-clickable" onClick={() => goToAssets()}>
-          <div className="hero-icon">
-            <AppstoreOutlined />
-          </div>
           <div className="hero-value">{data.total.toLocaleString('en-US')}</div>
           <div className="hero-label">Total Devices</div>
         </div>
@@ -307,33 +292,27 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="kpi-row">
-        <KpiTile
+      <div className="kpi-strip">
+        <KpiCell
           label="Total Asset Value"
           value={`${(data.totalValue / 1000000).toLocaleString('en-US', { maximumFractionDigits: 1 })}M`}
-          color="var(--brand)"
-          icon={<DollarCircleOutlined />}
         />
-        <KpiTile
+        <KpiCell
           label="Damaged"
           value={data.statusCounts.Damaged}
-          color="var(--status-damaged)"
-          icon={<WarningOutlined />}
+          tone={data.statusCounts.Damaged > 0 ? 'negative' : undefined}
           onClick={() => goToAssets({ status: 'Damaged' })}
         />
-        <KpiTile
+        <KpiCell
           label="Lost"
           value={data.statusCounts.Lost}
-          color="var(--status-lost)"
-          icon={<QuestionCircleOutlined />}
+          tone={data.statusCounts.Lost > 0 ? 'negative' : undefined}
           onClick={() => goToAssets({ status: 'Lost' })}
         />
-        <KpiTile
+        <KpiCell
           label="Win 11 Licensed"
           value={`${licensePct}%`}
           sub={`${data.licenseStats.licensed}/${data.licenseStats.total} laptops`}
-          color="var(--series-3)"
-          icon={<SafetyCertificateOutlined />}
           onClick={() => goToAssets({ type: 'LAPTOP', license: 'true' })}
         />
       </div>

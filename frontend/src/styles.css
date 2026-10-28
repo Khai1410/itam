@@ -309,6 +309,24 @@ body {
   .ant-modal .ant-space-item .ant-picker {
     width: 100% !important;
   }
+
+  /* Exactly 4 KPI cells always render — a fixed 2x2 grid on the phone, per
+     app-screens.md's "the KPI container becomes a 2-column grid". */
+  .kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpi-cell {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .kpi-cell:nth-child(2n) {
+    border-right: none;
+  }
+
+  .kpi-cell:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
 }
 
 /* ---------- Dashboard hero row ---------- */
@@ -327,23 +345,10 @@ body {
   align-items: flex-start;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  background: var(--brand);
   border-radius: 12px;
-  box-shadow: var(--shadow-md);
   padding: 20px 22px;
   color: #fff;
-}
-
-.hero-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  background: rgba(255, 255, 255, 0.18);
-  margin-bottom: 4px;
 }
 
 .hero-value {
@@ -363,10 +368,12 @@ body {
 .status-overview-card {
   flex: 1;
   min-width: 0;
-  background: var(--surface-1);
+  /* accent-ladder face: the ground steps one notch toward the brand hue's
+     palest tint instead of staying plain white, so the page and the hue
+     read as one family. */
+  background: color-mix(in srgb, var(--brand) 4%, var(--surface-1));
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: var(--shadow-sm);
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -441,29 +448,31 @@ body {
   flex-shrink: 0;
 }
 
-/* ---------- KPI row ---------- */
+/* ---------- KPI strip (accent-ladder: one container, 1px dividers,
+   no icon-in-tinted-square, no per-cell accent bar) ---------- */
 
-.kpi-row {
+.kpi-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.kpi-tile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--surface-1);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  background: color-mix(in srgb, var(--brand) 4%, var(--surface-1));
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm), inset 3px 0 0 var(--tile-color, var(--brand));
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.kpi-cell {
+  padding: 16px 18px;
+  border-right: 1px solid var(--border);
+}
+
+.kpi-cell:last-child {
+  border-right: none;
 }
 
 /* ---------- Dashboard -> Assets drill-through ---------- */
 
-.kpi-tile-clickable,
+.kpi-cell-clickable,
 .hero-card-clickable,
 .status-bar-seg-clickable,
 .status-legend-item-clickable,
@@ -472,9 +481,8 @@ body {
   transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease;
 }
 
-.kpi-tile-clickable:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md), inset 3px 0 0 var(--tile-color, var(--brand));
+.kpi-cell-clickable:hover {
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
 }
 
 .hero-card-clickable:hover {
@@ -490,45 +498,31 @@ body {
   color: var(--text-primary);
 }
 
-.kpi-tile-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  color: var(--tile-color, var(--brand));
-  background: color-mix(in srgb, var(--tile-color, var(--brand)) 14%, transparent);
+.kpi-cell-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.kpi-tile-body {
-  min-width: 0;
-}
-
-.kpi-tile-value {
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+.kpi-cell-value {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
 
-.kpi-tile-label {
-  color: var(--text-secondary);
-  font-size: 11.5px;
-  font-weight: 500;
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Colour marks a real negative signal only — a 0 stays in ink, per the
+   house rule that a zero or undefined change is never shown as a signal. */
+.kpi-cell-value-negative {
+  color: var(--status-lost);
 }
 
-.kpi-tile-sub {
+.kpi-cell-sub {
   color: var(--text-muted);
-  font-size: 10.5px;
-  margin-top: 1px;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 /* ---------- Recent activity ---------- */
@@ -610,6 +604,13 @@ body {
 
 .panel-grid .panel {
   margin-bottom: 0;
+}
+
+/* Dashboard-only: scoped so EmployeeLookup.jsx/MyAssets.jsx's plain .panel
+   is untouched. Flat chrome (no shadow) + the accent-ladder ground tint. */
+.dash-page .panel {
+  background: color-mix(in srgb, var(--brand) 2.5%, var(--surface-1));
+  box-shadow: none;
 }
 
 /* ---------- Panels ---------- */
@@ -745,7 +746,9 @@ body {
 }
 
 .bar-track {
-  background: var(--gridline);
+  /* accent-ladder: the pale tint carries the track, the full hue only
+     marks the filled part — one hue across every panel, not a rainbow. */
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
   border-radius: 3px;
   height: 6px;
   overflow: hidden;
@@ -754,7 +757,7 @@ body {
 .bar-fill {
   height: 100%;
   border-radius: 3px;
-  background: var(--series-1);
+  background: var(--brand);
   transition: width 0.3s ease;
 }
 

@@ -1,6 +1,6 @@
 import { Tooltip } from 'antd';
 
-export default function BarList({ rows, labelKey, valueKey = 'quantity', color = 'var(--series-1)', onRowClick }) {
+export default function BarList({ rows, labelKey, valueKey = 'quantity', color = 'var(--brand)', onRowClick }) {
   const max = Math.max(1, ...rows.map((r) => Number(r[valueKey]) || 0));
   const total = rows.reduce((sum, r) => sum + (Number(r[valueKey]) || 0), 0) || 1;
   const sorted = [...rows].sort((a, b) => (b[valueKey] || 0) - (a[valueKey] || 0));
